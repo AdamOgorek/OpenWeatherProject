@@ -18,7 +18,7 @@ app.get('/weather/:city/:country?', getWeather)
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
-function getWeather (req, res) {
+async function getWeather (req, res) {
   let city = req.params.city
   let country = req.params.country
   let url = ''
@@ -28,13 +28,36 @@ function getWeather (req, res) {
     let countryCode = countries.getAlpha2Code(country, 'en')
     url = `https://api.openweathermap.org/data/2.5/forecast?q=${city},${countryCode}&appid=${key}`
   }
-  axios.get(url)
+  let data
+  await axios.get(url)
     .then(function (response) {
-      res.json(response.data)
+      data = response.data
     })
     .catch(function (error) {
-      res.send(error)
+      res.send('oops')
+      data = 'error'
+      console.log('oops')
     })
     .then(function () {
     })
+  let coords = data['city']['coord']
+  let max_pm = 0
+  await axios.get(`http://api.openweathermap.org/data/2.5/air_pollution/forecast?lat=${coords['lat']}&lon=${coords['lon']}&appid=${key}`)
+    .then(function (response) {
+      air_pollution_data = response.data['list']
+      for (let hour_data of air_pollution_data) {
+        let pm = hour_data['components']['pm2_5']
+        max_pm = Math.max(pm, max_pm)
+      }
+      console.log(max_pm)
+    })
+    .catch(function (error) {
+      console.log(error)
+    })
+    .then(function () {
+    })
+  if(max_pm > 10) {
+    res.send('Wear mask')
+  }
+  else res.send('No need for mask')
 }
