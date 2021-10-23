@@ -1,0 +1,41 @@
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+<div id="app">
+  <h1> Welcome to the weather forecast service </h1>
+  Please enter the city you want to check, and optionally also the country
+  <br>
+  City:<input v-model = 'city'> Country:<input v-model = 'country'> <br><br>
+  <button v-on:click = 'GetWeather'>Get weather forecast</button>
+  <br> The forecast is {{max_pm}}
+</div>
+<script>
+	var app = new Vue({
+  el: '#app',
+  data: {
+    city: '',
+    country: '',
+    weatherSummary: [],
+    max_pm:0,
+    will_rain:false,
+    min_temp:0,
+    max_temp:0
+  },
+  methods:{
+    GetWeather: getWeather
+  }
+})
+
+function getWeather (){
+  console.log('Get Weather called')
+  let prom = fetch('weather/' + this.city + '/' + this.country)
+  prom.then(response => response.json())
+    .then(response => {
+      this.max_pm = response.max_pm
+      this.min_temp = response.min_temp
+      this.max_temp = response.max_temp
+      this.will_rain = response.will_rain
+      this.weatherSummary = response.weatherSummary
+      console.log(this.weatherSummary)
+    })
+}
+</script>

@@ -14,6 +14,9 @@ const key = JSON.parse(data)["key"]
 
 app.use(express.static(publicPath))
 
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname, '/index.html'));
+})
 app.get('/weather/:city/:country?', getWeather)
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
@@ -23,10 +26,10 @@ async function getWeather (req, res) {
   let country = req.params.country
   let url = ''
   if(typeof(country) === 'undefined') {
-    url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${key}`
+    url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${key}&units=metric`
   } else {
     let countryCode = countries.getAlpha2Code(country, 'en')
-    url = `https://api.openweathermap.org/data/2.5/forecast?q=${city},${countryCode}&appid=${key}`
+    url = `https://api.openweathermap.org/data/2.5/forecast?q=${city},${countryCode}&appid=${key}&units=metric`
   }
   let data
   await axios.get(url)
@@ -56,8 +59,19 @@ async function getWeather (req, res) {
     })
     .then(function () {
     })
-  if(max_pm > 10) {
-    res.send('Wear mask')
+  let weatherForecasts = data['list']
+  let will_rain = false
+  let weatherSummary = []
+  for (let forecast of weatherForecasts) {
+    let forecastSummary = {'Temperature':forecast['main']['temp'], 'Wind':forecast['wind'], 'Rainfall':0}
+    if(forecast['rain']) {
+      will_rain = true
+      forecastSummary['Rainfall'] = forecast['rain']['3h']
+    }
+    weatherSummary.push(forecastSummary)
   }
-  else res.send('No need for mask')
+  console.log(weatherSummary)
+  let min_temp = Math.min.apply( null, weatherSummary.map((v) => v.Temperature))
+  let max_temp = Math.max.apply( null, weatherSummary.map((v) => v.Temperature))
+  res.json({max_pm:max_pm, will_rain: will_rain, min_temp: min_temp, max_temp: max_temp, weatherSummary: weatherSummary})
 }
