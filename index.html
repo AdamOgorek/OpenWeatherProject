@@ -1,12 +1,36 @@
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+</style>
 
 <div id="app">
   <h1> Welcome to the weather forecast service </h1>
-  Please enter the city you want to check, and optionally also the country
+  Please enter the city you want to check, and optionally also the country.
   <br>
   City:<input v-model = 'city'> Country:<input v-model = 'country'> <br><br>
-  <button v-on:click = 'GetWeather'>Get weather forecast</button>
-  <br> The forecast is {{max_pm}}
+  <button v-on:click = 'GetWeather'>Get weather forecast</button> <br>
+  <span v-if="weatherSummary.length>0">
+    <p v-if="will_rain==true">Please remember to bring an umbrella, it will be raining.</p>
+    <p>It will be {{temperature_range}} overall.</p>
+    <p v-if="max_pm>10">Please make sure to wear a mask, as the air pollution will be high.</p>
+    <table>
+    <tr>
+      <th>Time</th>
+      <th>Temperature</th>
+      <th>Wind Speed</th>
+      <th>Total Rainfall</th>
+    </tr>
+    <tr v-for="row in weatherSummary">
+      <td> {{row.Time}} </td>
+      <td> {{row.Temperature}}°C </td>
+      <td> {{row.Wind.speed}}m/s </td>
+      <td> {{row.Rainfall}}mm </td>
+    </tr>
+    </table>
+  </span>
 </div>
 <script>
 	var app = new Vue({
@@ -17,8 +41,7 @@
     weatherSummary: [],
     max_pm:0,
     will_rain:false,
-    min_temp:0,
-    max_temp:0
+    temperature_range:''
   },
   methods:{
     GetWeather: getWeather
@@ -31,8 +54,7 @@ function getWeather (){
   prom.then(response => response.json())
     .then(response => {
       this.max_pm = response.max_pm
-      this.min_temp = response.min_temp
-      this.max_temp = response.max_temp
+      this.temperature_range = response.temperature_range
       this.will_rain = response.will_rain
       this.weatherSummary = response.weatherSummary
       console.log(this.weatherSummary)

@@ -8,6 +8,7 @@ const countries = require('i18n-iso-countries')
 
 const path = require("path")
 let publicPath = path.resolve(__dirname, "public")
+//I didn't want to hard code the API key, so I saved it as JSON
 let data = fs.readFileSync('API.json')
 const key = JSON.parse(data)["key"]
 
@@ -37,9 +38,7 @@ async function getWeather (req, res) {
       data = response.data
     })
     .catch(function (error) {
-      res.send('oops')
-      data = 'error'
-      console.log('oops')
+      res.send(error)
     })
     .then(function () {
     })
@@ -52,10 +51,9 @@ async function getWeather (req, res) {
         let pm = hour_data['components']['pm2_5']
         max_pm = Math.max(pm, max_pm)
       }
-      console.log(max_pm)
     })
     .catch(function (error) {
-      console.log(error)
+      res.send(error)
     })
     .then(function () {
     })
@@ -63,15 +61,24 @@ async function getWeather (req, res) {
   let will_rain = false
   let weatherSummary = []
   for (let forecast of weatherForecasts) {
-    let forecastSummary = {'Temperature':forecast['main']['temp'], 'Wind':forecast['wind'], 'Rainfall':0}
+    let forecastSummary = {'Time': forecast['dt_txt'], 'Temperature':forecast['main']['temp'], 'Wind':forecast['wind'], 'Rainfall':0}
     if(forecast['rain']) {
       will_rain = true
       forecastSummary['Rainfall'] = forecast['rain']['3h']
     }
     weatherSummary.push(forecastSummary)
   }
-  console.log(weatherSummary)
   let min_temp = Math.min.apply( null, weatherSummary.map((v) => v.Temperature))
   let max_temp = Math.max.apply( null, weatherSummary.map((v) => v.Temperature))
-  res.json({max_pm:max_pm, will_rain: will_rain, min_temp: min_temp, max_temp: max_temp, weatherSummary: weatherSummary})
+  let temperature_range = ''
+  if (min_temp > 20) {
+    temperature_range = 'hot'
+  }
+  else if (max_temp < 10) {
+    temperature_range = 'cold'
+  }
+  else {
+    temperature_range = 'warm'
+  }
+  res.json({max_pm:max_pm, will_rain: will_rain, temperature_range: temperature_range, weatherSummary: weatherSummary})
 }
